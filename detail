@@ -1,0 +1,944 @@
+# Oracle APEX 26.1 اور Oracle Database 26ai مکمل گائیڈ
+# Complete Guide: Oracle APEX 26.1 & Oracle Database 26ai
+## فہرست / TABLE OF CONTENTS
+1. Oracle APEX 26.1 Introduction
+2. Oracle Database 26ai Features
+3. Database Backup Strategies
+4. Step-by-Step Backup Procedures
+5. RMAN Commands & Examples
+6. Backup Recovery Methods
+7. Backup Verification & Maintenance
+## Part 1: Oracle APEX 26.1 Overview
+### 1.1 What is Oracle APEX?
+**APEX** = Application Express - یہ Oracle کا low-code development platform ہے
+**Key Features:**
+- Web-based application development
+- No special client software required
+- Built-in security features
+- RESTful APIs (ORDS Integration)
+- Interactive Grids & Forms
+- Reporting capabilities
+- Mobile-responsive design
+### 1.2 APEX 26.1 New Features
+✓ AI-powered code suggestions
+✓ Enhanced ORDS (Oracle REST Data Services) integration
+✓ Improved performance with 26ai database
+✓ Better accessibility standards
+✓ Advanced security features
+✓ New UI components
+```
+
+### 1.3 APEX Architecture
+
+```
+┌─────────────────────────────────────┐
+│    Web Browser / Mobile App         │
+├─────────────────────────────────────┤
+│    APEX Application Server (PORT 8080/8443)
+├─────────────────────────────────────┤
+│    Oracle REST Data Services (ORDS) │
+│    (REST APIs - PL/SQL Gateway)     │
+├─────────────────────────────────────┤
+│    Oracle Database 26ai             │
+│    (APEX schema, Tables, PL/SQL)    │
+├─────────────────────────────────────┤
+│    Backup & Recovery System         │
+└─────────────────────────────────────┘
+```
+
+### 1.4 APEX 26.1 Installation Requirements
+
+```sql
+-- Database Version: Oracle 12.2 یا اس سے اوپر
+-- APEX requires:
+- APEX_VERSION: 26.1
+- ORDS (Oracle REST Data Services): 24.1 یا اوپر
+- Java: JDK 11 یا اس سے اوپر
+- Web Server: Apache, Nginx, یا Oracle Application Server
+```
+
+---
+
+## Part 2: Oracle Database 26ai Features
+
+### 2.1 What is Oracle Database 26ai?
+
+**26ai** = Oracle Database 26 with Artificial Intelligence capabilities
+
+**بروجیکٹ کا نام:** Oracle Database 26 AI (26ai)
+**ریلیز ڈیٹ:** 2026 (تازہ ترین)
+
+### 2.2 Key Features of 26ai
+
+```
+1. AI/ML Integration
+   - Automatic feature engineering
+   - Built-in ML algorithms
+   - Vector search capabilities
+   - Prompt-based SQL generation
+
+2. Performance Enhancements
+   - Faster query execution
+   - Improved storage efficiency
+   - Better index management
+   - Optimized parallel processing
+
+3. Security Features
+   - Database Vault enhancements
+   - Advanced encryption
+   - AI-driven threat detection
+   - Improved audit capabilities
+
+4. Cloud Native Features
+   - Container support
+   - Kubernetes integration
+   - Improved cloud scalability
+   - Multi-cloud deployment
+
+5. Developer Friendly
+   - JSON/BSON support
+   - Graph database features
+   - Improved API support
+   - Better REST integration
+```
+
+### 2.3 System Requirements for 26ai
+
+```
+Memory:      Minimum 2 GB RAM (6+ GB recommended)
+Storage:     Minimum 10 GB disk space
+CPU:         2 cores minimum (4+ cores recommended)
+OS:          Linux, Windows, macOS
+Java:        JDK 11+
+```
+
+---
+
+## Part 3: Database Backup Strategies
+
+### 3.1 Backup Types Overview
+
+```
+┌──────────────────────────────────────────────┐
+│        Oracle Database Backup Types          │
+├──────────────────────────────────────────────┤
+│                                              │
+│  1. FULL BACKUP (Level 0)                    │
+│     └─ تمام ڈیٹا فائلوں کو بیک اپ کرتا ہے   │
+│                                              │
+│  2. INCREMENTAL BACKUP (Level 1)             │
+│     ├─ صرف تبدیل شدہ بلاکس                 │
+│     ├─ Differential (سب سے ہالیہ سے بعد)    │
+│     └─ Cumulative (Level 0 سے بعد تمام)     │
+│                                              │
+│  3. ARCHIVE LOG BACKUP                       │
+│     └─ تمام آن لائن ریڈو لاگز              │
+│                                              │
+│  4. CONTROLFILE BACKUP                       │
+│     └─ ڈیٹابیس کی کنٹرول فائل              │
+│                                              │
+│  5. SPFILE BACKUP                            │
+│     └─ ڈیٹابیس کے متوازی فائل کا سیٹ       │
+│                                              │
+└──────────────────────────────────────────────┘
+```
+
+### 3.2 Backup Strategy Selection
+
+```
+STRATEGY 1: WEEKLY FULL + DAILY INCREMENTAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mon: Full Backup (Level 0)      → 4 GB
+Tue: Incremental (Level 1)      → 0.5 GB
+Wed: Incremental (Level 1)      → 0.6 GB
+Thu: Incremental (Level 1)      → 0.7 GB
+Fri: Incremental (Level 1)      → 0.8 GB
+Sat: Incremental (Level 1)      → 0.5 GB
+Sun: Incremental (Level 1)      → 0.4 GB
+
+فوائل:
+✓ روزانہ کی بیک اپ تیزی سے ہوتی ہے
+✓ کم ڈسک اسپیس استعمال ہوتا ہے
+✓ ریکوری تیزی سے ہو سکتی ہے
+
+
+STRATEGY 2: DAILY FULL BACKUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+روزانہ: Full Backup (Level 0)   → 4 GB/day
+
+فوائل:
+✓ سب سے سادہ
+✓ فوری ریکوری ممکن
+✓ کوئی انحصار نہیں
+
+نقصانات:
+✗ بہت زیادہ ڈسک اسپیس
+✗ زیادہ وقت لگتا ہے
+
+
+STRATEGY 3: CUMULATIVE INCREMENTAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mon: Full Backup (Level 0)      → 4 GB
+Tue: Incremental (Level 1 Cum)  → 1.5 GB
+Wed: Incremental (Level 1 Cum)  → 2.2 GB
+Thu: Incremental (Level 1 Cum)  → 2.8 GB
+Fri: Incremental (Level 1 Cum)  → 3.5 GB
+
+فوائل:
+✓ ریکوری صرف 2 بیک اپز سے ممکن
+✓ اچھا توازن
+
+نقصانات:
+✗ آخری بیک اپ بڑا ہو جاتا ہے
+```
+
+### 3.3 Backup Infrastructure Requirements
+
+```
+BACKUP DESTINATION OPTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option 1: Local Disk Storage
+├─ فولڈر: /backup/daily/
+├─ سپیس: کم از کم 500 GB
+├─ سپیڈ: بہت تیز (SSD مثالی)
+└─ مناسب: چھوٹے-درمیانے ڈیٹابیسز کے لیے
+
+Option 2: Network Storage (NFS/SMB)
+├─ فولڈر: /mnt/backup/ (mounted NFS)
+├─ سپیس: 1-5 TB
+├─ سپیڈ: درمیانی (نیٹ ورک پر منحصر)
+└─ مناسب: بڑے ڈیٹابیسز کے لیے
+
+Option 3: Cloud Storage (AWS S3, Azure Blob)
+├─ فولڈر: s3://oracle-backups/
+├─ سپیس: لامحدود
+├─ سپیڈ: بہت سست (internet پر منحصر)
+├─ لاگت: ماہانہ خرچ
+└─ مناسب: جغرافی بیک اپ کے لیے
+
+Option 4: Tape Backup (Enterprise)
+├─ فولڈر: //tape/Oracle/Backup
+├─ سپیس: سینکڑوں ٹیرا بائٹ
+├─ سپیڈ: سست لیکن سستا
+└─ مناسب: دیر تک رکھنے والی بیک اپز کے لیے
+```
+
+---
+
+## Part 4: Step-by-Step Backup Procedures
+
+### 4.1 PREPARATION: Database Backup Mode میں جانا
+
+#### Step 1: Current Database Status Check کریں
+
+```bash
+# Terminal میں bash commands
+$ sqlplus / as sysdba
+
+SQL> SELECT * FROM v$instance;
+
+NAME          OPEN_CURSORS DB_NAME   DBID
+───────────── ──────────── ───────── ──────────
+orcl          300          ORCL      1608118455
+```
+
+#### Step 2: Database Archive Mode Enable کریں
+
+```sql
+-- یہ ضروری ہے تاکہ incremental backups لی جا سکیں
+
+SQL> SHUTDOWN IMMEDIATE;
+
+SQL> STARTUP MOUNT;
+
+SQL> ALTER DATABASE ARCHIVELOG;
+
+SQL> ALTER DATABASE OPEN;
+
+-- Verify کریں
+SQL> SELECT LOG_MODE FROM V$DATABASE;
+
+LOG_MODE
+────────
+ARCHIVELOG  ✓ (اگر یہ نہیں ہے تو مسئلہ)
+```
+
+#### Step 3: RMAN Initialize کریں
+
+```bash
+# Terminal سے RMAN شروع کریں
+$ rman target /
+
+# یا password کے ساتھ
+$ rman target sys@ORCL
+
+# Output:
+# Recovery Manager: Release 26.0.0.0.0 - Production
+# connected to target database: ORCL (DBID=1608118455)
+```
+
+---
+
+### 4.2 FULL BACKUP (Level 0) - مکمل بیک اپ
+
+#### Method 1: Simple Full Backup
+
+```sql
+-- یہ سب سے سادہ طریقہ ہے
+-- RMAN Prompt میں یہ command چلائیں:
+
+RMAN> BACKUP DATABASE;
+
+-- Output شامل ہوگی:
+Starting backup at 15-JAN-26 10:30:00
+using target database control file instead of recovery catalog
+allocated channel: ORA_DISK_1
+channel ORA_DISK_1: SID=135 device type=DISK
+...
+Finished backup at 15-JAN-26 10:45:30
+```
+
+#### Method 2: Full Backup with Archive Logs
+
+```sql
+-- یہ آرکائیو لاگز بھی شامل کرتا ہے (بہتر طریقہ)
+
+RMAN> BACKUP DATABASE PLUS ARCHIVELOG;
+
+-- یا compressed بیک اپ (ڈسک سپیس بچاتا ہے):
+
+RMAN> BACKUP AS COMPRESSED BACKUPSET DATABASE PLUS ARCHIVELOG;
+```
+
+#### Method 3: Full Backup with Configuration
+
+```sql
+-- پہلے RMAN کو configure کریں
+
+RMAN> CONFIGURE BACKUP OPTIMIZATION ON;
+RMAN> CONFIGURE CONTROLFILE AUTOBACKUP ON;
+RMAN> CONFIGURE CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK 
+      TO '/backup/autobackup/%F';
+RMAN> CONFIGURE MAXSETSIZE TO UNLIMITED;
+RMAN> CONFIGURE DEVICE TYPE DISK PARALLELIZATION LEVEL 4;
+
+-- اب backup لیں
+RMAN> RUN {
+        ALLOCATE CHANNEL c1 TYPE DISK FORMAT '/backup/full/%d_%T_%s_%p';
+        ALLOCATE CHANNEL c2 TYPE DISK FORMAT '/backup/full/%d_%T_%s_%p';
+        ALLOCATE CHANNEL c3 TYPE DISK FORMAT '/backup/full/%d_%T_%s_%p';
+        ALLOCATE CHANNEL c4 TYPE DISK FORMAT '/backup/full/%d_%T_%s_%p';
+        
+        BACKUP AS COMPRESSED BACKUPSET 
+            DATABASE 
+            PLUS ARCHIVELOG 
+            DELETE INPUT;
+        
+        RELEASE CHANNEL c1;
+        RELEASE CHANNEL c2;
+        RELEASE CHANNEL c3;
+        RELEASE CHANNEL c4;
+      }
+```
+
+**اہم نکات:**
+- `AS COMPRESSED BACKUPSET` = بیک اپ کو compress کرتا ہے (30-50% سائز کم)
+- `DELETE INPUT` = پرانے archive logs کو حذف کرتا ہے
+- `PARALLELIZATION LEVEL 4` = 4 متوازی streams میں کام کرتا ہے
+
+---
+
+### 4.3 INCREMENTAL BACKUP (Level 1) - بدلاؤ والی بیک اپ
+
+#### Level 0 Backup بطور Base (پہلی بار)
+
+```sql
+-- یہ Level 0 incremental backup ہے (Full backup کی طرح)
+RMAN> BACKUP INCREMENTAL LEVEL 0 DATABASE PLUS ARCHIVELOG;
+
+-- یہ بیک اپ subsequent Level 1 backups کا base بن جاتا ہے
+```
+
+#### Daily Differential Incremental Backup
+
+```sql
+-- یہ صرف سب سے ہالیہ Level 0 یا Level 1 کے بعد کے تبدیلیوں کو بیک اپ کرتا ہے
+RMAN> BACKUP INCREMENTAL LEVEL 1 DATABASE PLUS ARCHIVELOG;
+
+-- مثال:
+-- Backup Schedule:
+-- Mon: INCREMENTAL LEVEL 0   (size: 4 GB)
+-- Tue: INCREMENTAL LEVEL 1   (size: 0.5 GB) - صرف تبدیلیاں
+-- Wed: INCREMENTAL LEVEL 1   (size: 0.6 GB) - صرف تبدیلیاں
+-- Thu: INCREMENTAL LEVEL 1   (size: 0.7 GB) - صرف تبدیلیاں
+```
+
+#### Daily Cumulative Incremental Backup
+
+```sql
+-- یہ آخری Level 0 کے بعد تمام تبدیلیاں بیک اپ کرتا ہے
+RMAN> BACKUP INCREMENTAL LEVEL 1 CUMULATIVE DATABASE PLUS ARCHIVELOG;
+
+-- مثال:
+-- Backup Schedule:
+-- Mon: INCREMENTAL LEVEL 0   (size: 4 GB)
+-- Tue: INCREMENTAL LEVEL 1 CUMULATIVE  (size: 1.5 GB) - تمام بدلاؤ
+-- Wed: INCREMENTAL LEVEL 1 CUMULATIVE  (size: 2.2 GB) - تمام بدلاؤ
+-- Thu: INCREMENTAL LEVEL 1 CUMULATIVE  (size: 2.8 GB) - تمام بدلاؤ
+
+-- Recovery کے لیے صرف 2 بیک اپز چاہیں:
+-- Level 0 + آخری Level 1 CUMULATIVE
+```
+
+#### Script with Multiple Channels (بہتری کے ساتھ)
+
+```sql
+RMAN> RUN {
+        ALLOCATE CHANNEL c1 TYPE DISK FORMAT '/backup/incr/%d_%T_%s_%p';
+        ALLOCATE CHANNEL c2 TYPE DISK FORMAT '/backup/incr/%d_%T_%s_%p';
+        
+        BACKUP AS COMPRESSED BACKUPSET 
+            INCREMENTAL LEVEL 1 
+            DATABASE 
+            PLUS ARCHIVELOG 
+            DELETE INPUT;
+        
+        RELEASE CHANNEL c1;
+        RELEASE CHANNEL c2;
+      }
+```
+
+---
+
+### 4.4 Archive Log Backup
+
+```sql
+-- صرف Archive Logs کی بیک اپ (روزانہ متعدد بار)
+RMAN> BACKUP ARCHIVELOG ALL;
+
+-- یا compressed
+RMAN> BACKUP AS COMPRESSED BACKUPSET ARCHIVELOG ALL DELETE INPUT;
+
+-- مخصوص تاریخ کے بعد کی logs
+RMAN> BACKUP ARCHIVELOG FROM TIME 'SYSDATE-1' DELETE INPUT;
+
+-- آخری N دن کی logs
+RMAN> BACKUP ARCHIVELOG FROM TIME 'SYSDATE-7' DELETE INPUT;
+```
+
+---
+
+### 4.5 Control File & SPFILE Backup
+
+```sql
+-- Control File کی بیک اپ (خودکار یا manual)
+RMAN> BACKUP CURRENT CONTROLFILE;
+
+-- SPFILE (Server Parameter File) کی بیک اپ
+RMAN> BACKUP SPFILE;
+
+-- دونوں ساتھ
+RMAN> BACKUP CURRENT CONTROLFILE PLUS SPFILE;
+```
+
+---
+
+## Part 5: RMAN Advanced Commands & Examples
+
+### 5.1 RMAN Configuration Settings
+
+```sql
+-- موجودہ settings دیکھیں
+RMAN> SHOW ALL;
+
+-- اہم Settings:
+
+-- 1. Backup Optimization ON کریں (پہلے سے موجود files کو skip کرتا ہے)
+RMAN> CONFIGURE BACKUP OPTIMIZATION ON;
+
+-- 2. Control File Autobackup ON کریں (ہر backup کے بعد خودکار)
+RMAN> CONFIGURE CONTROLFILE AUTOBACKUP ON;
+
+-- 3. Autobackup کی جگہ مقرر کریں
+RMAN> CONFIGURE CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK 
+      TO '/backup/autobackup/c-%d_%T_%s_%p.bkp';
+
+-- 4. Backup Set کی زیادہ سے زیادہ سائز مقرر کریں
+RMAN> CONFIGURE MAXSETSIZE TO 10G;
+
+-- 5. Retention Policy (کتنی دیر backup رکھنی ہے)
+-- REDUNDANCY: کتنے backups رکھنے ہیں
+RMAN> CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 7 DAYS;
+-- یا
+RMAN> CONFIGURE RETENTION POLICY TO REDUNDANCY 3;
+
+-- 6. Parallel Processing چینلز
+RMAN> CONFIGURE DEVICE TYPE DISK PARALLELIZATION LEVEL 4;
+
+-- 7. Archive Log Deletion Policy
+RMAN> CONFIGURE ARCHIVELOG DELETION POLICY TO APPLIED ON ALL STANDBY;
+```
+
+### 5.2 Backup Verification Commands
+
+```sql
+-- موجودہ backups کی فہرست دیکھیں
+RMAN> LIST BACKUP;
+RMAN> LIST BACKUP SUMMARY;
+RMAN> LIST BACKUP OF DATABASE;
+
+-- مخصوص backup کی تفصیلات
+RMAN> LIST BACKUP OF DATABASE COMPLETED AFTER 'TRUNC(SYSDATE-1)';
+
+-- Archive log backups
+RMAN> LIST BACKUP OF ARCHIVELOG ALL;
+
+-- Controlfile backups
+RMAN> LIST BACKUP OF CONTROLFILE;
+
+-- خراب backups تلاش کریں
+RMAN> LIST BACKUP BY FILE;
+RMAN> VALIDATE BACKUPSET <backup_set_id>;
+
+-- ہر backup میں کتنی فائلیں ہیں
+RMAN> LIST BACKUP VERBOSE;
+```
+
+### 5.3 Backup Deletion & Maintenance
+
+```sql
+-- پرانی backups حذف کریں (7 دن سے پہلے کی)
+RMAN> DELETE BACKUP COMPLETED BEFORE 'SYSDATE-7';
+
+-- unavailable backups حذف کریں
+RMAN> DELETE BACKUP NOPROMPT;
+
+-- مخصوص backup حذف کریں
+RMAN> DELETE BACKUPSET <backup_set_id>;
+
+-- Archive log حذف کریں (پہلے backup لیں!)
+RMAN> DELETE ARCHIVELOG ALL;
+RMAN> DELETE ARCHIVELOG UNTIL TIME 'SYSDATE-7';
+
+-- دیکھیں کہ کیا حذف ہوگا (بغیر حذف کیے)
+RMAN> DELETE BACKUP COMPLETED BEFORE 'SYSDATE-7' DRY RUN;
+```
+
+### 5.4 Block Change Tracking (تیز backup کے لیے)
+
+```sql
+-- یہ enable کرنے سے صرف تبدیل شدہ blocks track ہوتے ہیں
+-- بہت تیز incremental backups دیتا ہے
+
+SQL> ALTER DATABASE ENABLE BLOCK CHANGE TRACKING;
+
+-- یا custom location میں
+SQL> ALTER DATABASE ENABLE BLOCK CHANGE TRACKING 
+     USING FILE '/change_tracking_file/bct.f';
+
+-- Disable کرنے کے لیے
+SQL> ALTER DATABASE DISABLE BLOCK CHANGE TRACKING;
+
+-- Status دیکھیں
+SQL> SELECT * FROM V$BLOCK_CHANGE_TRACKING;
+```
+
+---
+
+## Part 6: Database Recovery Procedures
+
+### 6.1 Complete Recovery (تمام ڈیٹا واپس لائیں)
+
+```sql
+-- Scenario: Database crash ہو گیا
+
+-- Step 1: Database کو MOUNT mode میں شروع کریں
+SQL> SHUTDOWN IMMEDIATE;
+SQL> STARTUP MOUNT;
+
+-- Step 2: RMAN میں آئیں اور recovery کریں
+RMAN> RMAN TARGET /
+
+RMAN> RESTORE DATABASE;
+RMAN> RECOVER DATABASE;
+RMAN> ALTER DATABASE OPEN RESETLOGS;
+
+-- یہ تمام backups استعمال کر کے database کو restore کرتا ہے
+```
+
+### 6.2 Point-in-Time Recovery (کسی مخصوص وقت تک واپس لائیں)
+
+```sql
+-- Scenario: غلط query سے ڈیٹا غائب ہو گیا
+-- ہم database کو 1 گھنٹہ پہلے کی حالت میں واپس لانا چاہتے ہیں
+
+RMAN> RUN {
+        RESTORE DATABASE UNTIL TIME "TO_DATE('15-JAN-2026 10:00:00', 'DD-MON-YYYY HH24:MI:SS')";
+        RECOVER DATABASE UNTIL TIME "TO_DATE('15-JAN-2026 10:00:00', 'DD-MON-YYYY HH24:MI:SS')";
+      }
+
+SQL> ALTER DATABASE OPEN RESETLOGS;
+```
+
+### 6.3 Tablespace Recovery (صرف ایک tablespace واپس لائیں)
+
+```sql
+-- Scenario: صرف USERS tablespace corrupt ہو گیا
+
+RMAN> RUN {
+        RESTORE TABLESPACE USERS;
+        RECOVER TABLESPACE USERS;
+      }
+
+-- یا incomplete recovery
+RMAN> RUN {
+        RESTORE TABLESPACE USERS UNTIL TIME "TO_DATE('15-JAN-2026 10:00:00', 'DD-MON-YYYY HH24:MI:SS')";
+        RECOVER TABLESPACE USERS UNTIL TIME "TO_DATE('15-JAN-2026 10:00:00', 'DD-MON-YYYY HH24:MI:SS')";
+      }
+```
+
+### 6.4 Datafile Recovery
+
+```sql
+-- صرف ایک datafile واپس لائیں
+
+RMAN> RESTORE DATAFILE '/u01/oradata/orcl/users01.dbf';
+RMAN> RECOVER DATAFILE '/u01/oradata/orcl/users01.dbf';
+```
+
+---
+
+## Part 7: Automated Backup Scheduling
+
+### 7.1 Linux Cron Job (روزانہ بیک اپ)
+
+```bash
+# File: /home/oracle/backup_schedule.sh
+
+#!/bin/bash
+
+# Oracle environment variables سیٹ کریں
+export ORACLE_HOME=/u01/app/oracle/product/26.0.0.0
+export ORACLE_SID=ORCL
+export PATH=$ORACLE_HOME/bin:$PATH
+
+# Log file
+LOG_FILE="/backup/logs/backup_$(date +%Y%m%d_%H%M%S).log"
+
+# Backup command
+{
+    echo "Backup started at $(date)"
+    
+    # شنیچ کو full backup، باقی دن incremental
+    DAY=$(date +%u)  # 1=Monday, 7=Sunday
+    
+    if [ "$DAY" -eq 1 ]; then
+        # سوموار: Full Level 0 backup
+        rman target / <<EOF
+BACKUP INCREMENTAL LEVEL 0 DATABASE PLUS ARCHIVELOG;
+EOF
+    else
+        # دوسری تاریخیں: Incremental Level 1
+        rman target / <<EOF
+BACKUP INCREMENTAL LEVEL 1 DATABASE PLUS ARCHIVELOG;
+EOF
+    fi
+    
+    echo "Backup completed at $(date)"
+} >> $LOG_FILE 2>&1
+```
+
+### 7.2 Crontab Entry (خودکار چلائیں)
+
+```bash
+# File: /var/spool/cron/oracle (یا crontab -e)
+
+# روزانہ 2 AM پر full/incremental backup
+0 2 * * * /home/oracle/backup_schedule.sh
+
+# ہفتہ میں 1 AM پر incremental backup
+0 1 * * * /home/oracle/incremental_backup.sh
+
+# ہر 6 گھنٹے میں archive log backup
+0 */6 * * * rman target / <<'EOF'
+BACKUP AS COMPRESSED BACKUPSET ARCHIVELOG ALL DELETE INPUT;
+EOF
+
+# ہر ہفتہ موجودہ backups کو verify کریں
+0 3 * * 0 rman target / <<'EOF'
+VALIDATE BACKUPSET ALL;
+LIST BACKUP;
+EOF
+```
+
+---
+
+## Part 8: Backup Best Practices & Maintenance
+
+### 8.1 Backup Health Check Script
+
+```sql
+-- File: backup_health_check.sql
+
+SET PAGESIZE 50
+SET LINESIZE 120
+
+-- 1. آخری backup کی تاریخ
+SELECT 'Last Full Backup' as Backup_Type, 
+       MAX(COMPLETION_TIME) as Last_Backup_Date
+FROM V$BACKUP_DATAFILE
+WHERE BACKUP_TYPE = 'L'
+UNION ALL
+SELECT 'Last Incremental',
+       MAX(COMPLETION_TIME)
+FROM V$BACKUP_DATAFILE
+WHERE BACKUP_TYPE = 'I';
+
+-- 2. Archive log status
+SELECT COUNT(*) as Total_Archive_Logs,
+       MIN(FIRST_TIME) as Oldest_Log,
+       MAX(NEXT_TIME) as Newest_Log
+FROM V$LOG_HISTORY;
+
+-- 3. Backup validation status
+SELECT COUNT(*) as Total_Backups,
+       SUM(CASE WHEN STATUS='AVAILABLE' THEN 1 ELSE 0 END) as Available,
+       SUM(CASE WHEN STATUS='UNAVAILABLE' THEN 1 ELSE 0 END) as Unavailable
+FROM V$BACKUP;
+
+-- 4. Disk space استعمال
+SELECT * FROM V$BACKUP_DEVICE;
+```
+
+### 8.2 Monitoring Script
+
+```bash
+# File: monitor_backup.sh
+
+#!/bin/bash
+
+ORACLE_SID=ORCL
+ORACLE_HOME=/u01/app/oracle/product/26.0.0.0
+export ORACLE_SID ORACLE_HOME PATH=$ORACLE_HOME/bin:$PATH
+
+# اگر 24 گھنٹے سے کوئی backup نہ ہو تو alert بھیجیں
+LAST_BACKUP=$(sqlplus -s / as sysdba <<EOF
+SET ECHO OFF LINESIZE 1000 PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF TRIMSPOOL ON
+SELECT MAX(COMPLETION_TIME) FROM V\$BACKUP_DATAFILE;
+EXIT;
+EOF
+)
+
+HOURS_SINCE=$(($(date +%s) - $(date -d "$LAST_BACKUP" +%s))) 
+HOURS_SINCE=$((HOURS_SINCE / 3600))
+
+if [ $HOURS_SINCE -gt 24 ]; then
+    echo "WARNING: No backup in last 24 hours!" | mail -s "Backup Alert" dba@company.com
+    exit 1
+fi
+
+echo "Backup status: OK - Last backup was $HOURS_SINCE hours ago"
+exit 0
+```
+
+### 8.3 Backup Data Integrity Checks
+
+```sql
+-- Backup کی validity چیک کریں
+RMAN> VALIDATE BACKUPSET ALL;
+
+-- DBCC (Data Block Consistency Check)
+RMAN> BACKUP VALIDATE CHECK LOGICAL DATABASE;
+
+-- Backup میں کتنے blocks ہیں
+RMAN> VALIDATE BACKUPSET <backup_id> 
+      SEGMENT VALIDATION;
+
+-- Archive log validity
+RMAN> VALIDATE ARCHIVELOG ALL;
+```
+
+---
+
+## Part 9: Common Backup Issues & Solutions
+
+### 9.1 مسئلہ: Recovery Catalog Connect Fail
+
+```
+Error: RMAN-03009: failure of allocate command on default channel
+```
+
+**حل:**
+```sql
+-- Recovery catalog سے disconnect کریں اور control file استعمال کریں
+RMAN> CONNECT TARGET /
+-- یا
+RMAN> CONNECT CATALOG rman/password@recovery_db
+```
+
+### 9.2 مسئلہ: Backup بہت سست ہے
+
+**حل:**
+```sql
+-- 1. Parallelization بڑھائیں
+RMAN> CONFIGURE DEVICE TYPE DISK PARALLELIZATION LEVEL 8;
+
+-- 2. Compression استعمال کریں
+RMAN> BACKUP AS COMPRESSED BACKUPSET DATABASE;
+
+-- 3. Block Change Tracking enable کریں
+SQL> ALTER DATABASE ENABLE BLOCK CHANGE TRACKING;
+
+-- 4. SSD استعمال کریں backup destination کے لیے
+```
+
+### 9.3 مسئلہ: Backup Space ختم ہو گئی
+
+**حل:**
+```sql
+-- پرانی backups حذف کریں
+RMAN> DELETE BACKUP COMPLETED BEFORE 'SYSDATE-30';
+
+-- Retention policy بڑھائیں
+RMAN> CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 30 DAYS;
+
+-- Backup destination میں زیادہ space add کریں
+-- یا NFS mount استعمال کریں
+```
+
+### 9.4 مسئلہ: Archive Logs بہت بڑے ہو رہے ہیں
+
+**حل:**
+```sql
+-- Hourly archive log backup لیں
+RMAN> BACKUP ARCHIVELOG ALL DELETE INPUT;
+
+-- Log switch frequency بڑھائیں (چھوٹے log فائلیں)
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_1='LOCATION=/archive VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=ORCL' SCOPE=BOTH;
+
+-- Log file size کم کریں
+-- (Database restart ضروری ہے)
+```
+
+---
+
+## Part 10: Oracle APEX 26.1 with Database 26ai Integration
+
+### 10.1 APEX Schema Backup (خاص طریقہ)
+
+```sql
+-- APEX schema میں stored procedures ہیں
+-- جو backup کے دوران محفوظ رہنے چاہیں
+
+-- APEX tablespaces کو verify کریں
+SELECT TABLESPACE_NAME FROM DBA_TABLESPACES 
+WHERE TABLESPACE_NAME LIKE '%APEX%';
+
+-- APEX کی مکمل backup (تمام objectsکے ساتھ)
+RMAN> RUN {
+        ALLOCATE CHANNEL c1 TYPE DISK FORMAT '/backup/apex/%d_%T_%s_%p';
+        
+        -- تمام APEX tables backup کریں
+        BACKUP DATABASE INCLUDE CURRENT CONTROLFILE;
+        
+        -- Archive logs بھی شامل کریں
+        BACKUP PLUS ARCHIVELOG;
+        
+        RELEASE CHANNEL c1;
+      }
+```
+
+### 10.2 APEX Applications Export (SQL Scripts)
+
+```sql
+-- APEX 26.1 میں انجام دیں
+
+-- تمام applications کو export کریں
+BEGIN
+    FOR app_rec IN (
+        SELECT app_id, app_name 
+        FROM APEX_APPLICATIONS
+    ) LOOP
+        APEX_EXPORT.GENERATE_APPLICATION_INSTALL_SCRIPT(
+            p_app_id => app_rec.app_id,
+            p_split_file_count => 1
+        );
+    END LOOP;
+END;
+/
+
+-- یہ scripts /u01/app/oracle/apex/export/ میں save ہوں گی
+```
+
+### 10.3 ORDS Configuration Backup
+
+```bash
+# ORDS کی configuration backup لیں
+# یہ اہم ہے APEX کے साथ
+
+cd $ORDS_HOME
+
+# ORDS configuration backup کریں
+ords config export --config-path ~/ords_backup_config
+
+# ORDS war file backup کریں
+cp ords.war /backup/ords/ords_26.1.war
+```
+
+### 10.4 Complete Recovery: Database + APEX
+
+```sql
+-- اگر سب کچھ ختم ہو جائے تو:
+
+-- 1. Database restore کریں (پچھلے steps اس طرح)
+RMAN> RESTORE DATABASE;
+RMAN> RECOVER DATABASE;
+RMAN> ALTER DATABASE OPEN RESETLOGS;
+
+-- 2. APEX schema restore ہوگا (ڈیٹابیس میں ہے)
+
+-- 3. ORDS کو restart کریں
+systemctl restart ords
+
+-- 4. APEX UI check کریں
+-- http://your-server:8080/apex/
+```
+
+---
+
+## Part 11: Checklist اور خلاصہ
+
+### Final Backup Checklist
+
+```
+✓ Archive Mode Enable کیا گیا
+✓ RMAN configured (channels, retention, etc.)
+✓ Backup destination موجود اور writable ہے
+✓ Enough disk space موجود ہے (backup size + 20%)
+✓ First full backup لیا گیا (Level 0)
+✓ Incremental backups schedule کی گئیں
+✓ Archive logs backup configure کی گئیں
+✓ Control file autobackup ON ہے
+✓ Backup monitoring script چل رہی ہے
+✓ Recovery tested اور verified ہے
+✓ Documentation تیار کی گئی ہے
+✓ Team کو procedure سکھایا گیا ہے
+```
+
+---
+
+## نتیجہ / CONCLUSION
+
+Oracle Database 26ai backup system مکمل اور reliable ہے۔ اہم نکات:
+
+1. **Full Backups**: سپتاہ میں ایک بار (Level 0)
+2. **Incremental Backups**: روزانہ (Level 1 Differential)
+3. **Archive Logs**: 6 گھنٹے میں ایک بار
+4. **Verification**: ہفتہ میں ایک بار
+5. **Testing**: ماہ میں ایک بار recovery test کریں
+
+**Recovery Time Objective (RTO)**: 2-4 گھنٹے
+**Recovery Point Objective (RPO)**: 6 گھنٹے (آرکائیو logs کی وجہ سے)
+
+یہ سیٹ اپ کسی بھی انسانی خرابی یا hardware failure سے database کو محفوظ رکھے گا۔
